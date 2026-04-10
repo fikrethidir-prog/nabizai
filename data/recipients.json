@@ -1,0 +1,49 @@
+{
+  "sender": "xbodrumajani@gmail.com",
+  "recipients": [
+    {
+      "email": "fikrethidir@gmail.com",
+      "name": "Fikret Hidir",
+      "role": "Yönetici",
+      "notifications": {
+        "medya_yeni_icerik": true,
+        "medya_site_durumu": true,
+        "medya_gunluk_ozet": true,
+        "sosyal_yayin_bildirimi": true,
+        "sosyal_topluluk_raporu": true,
+        "sosyal_etkilesim_uyari": true,
+        "icerik_onay_talebi": true,
+        "icerik_normalize": false,
+        "gunluk_rapor": true,
+        "haftalik_rapor": true,
+        "kriz_uyarisi": true,
+        "sistem_durumu": true,
+        "sistem_zamanlayici": false
+      },
+      "active": true,
+      "added_at": "2026-01-01T00:00:00"
+    },
+    {
+      "email": "cizgegizembediz@gmail.com",
+      "name": "Çizge Gizem Bediz",
+      "role": "Editör",
+      "notifications": {
+        "medya_yeni_icerik": true,
+        "medya_site_durumu": true,
+        "medya_gunluk_ozet": true,
+        "sosyal_yayin_bildirimi": false,
+        "sosyal_topluluk_raporu": false,
+        "sosyal_etkilesim_uyari": false,
+        "icerik_onay_talebi": true,
+        "icerik_normalize": true,
+        "gunluk_rapor": true,
+        "haftalik_rapor": true,
+        "kriz_uyarisi": false,
+        "sistem_durumu": false,
+        "sistem_zamanlayici": false
+      },
+      "active": true,
+      "added_at": "2026-01-01T00:00:00"
+    }
+  ]
+}

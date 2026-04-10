@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 50" fill="none">
+  <!-- Radar Icon -->
+  <g transform="translate(5, 5)">
+    <!-- Outer ring -->
+    <circle cx="20" cy="20" r="18" stroke="#233B77" stroke-width="2" fill="none" opacity="0.3"/>
+    <!-- Middle ring -->
+    <circle cx="20" cy="20" r="12" stroke="#233B77" stroke-width="2" fill="none" opacity="0.5"/>
+    <!-- Inner ring -->
+    <circle cx="20" cy="20" r="6" stroke="#233B77" stroke-width="2" fill="none" opacity="0.7"/>
+    <!-- Sweep line -->
+    <line x1="20" y1="20" x2="20" y2="2" stroke="#EE741D" stroke-width="2.5" stroke-linecap="round"/>
+    <!-- Signal dot -->
+    <circle cx="28" cy="10" r="3" fill="#EE741D"/>
+    <!-- Center dot -->
+    <circle cx="20" cy="20" r="2" fill="#233B77"/>
+  </g>
+  <!-- Text: nabız -->
+  <text x="52" y="35" font-family="Inter, sans-serif" font-weight="800" font-size="28" fill="#233B77" letter-spacing="-0.05em">nabız</text>
+  <!-- Text: ai -->
+  <text x="146" y="35" font-family="Inter, sans-serif" font-weight="300" font-size="28" fill="#EE741D" letter-spacing="-0.02em">ai</text>
+</svg>

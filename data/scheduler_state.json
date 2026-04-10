@@ -1,0 +1,17 @@
+{
+  "is_running": true,
+  "interval_minutes": 30,
+  "last_run": "2026-04-09T20:16:55.828232",
+  "next_run": "2026-04-09T20:46:55.828232",
+  "total_runs": 4,
+  "last_error": null,
+  "quiet_mode": true,
+  "enabled_agents": {
+    "ingestion": true,
+    "normalizer": true,
+    "social_pilot": true,
+    "community_reply": true,
+    "analyst": true,
+    "personalization": true
+  }
+}

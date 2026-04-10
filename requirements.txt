@@ -1,0 +1,21 @@
+# ============================================
+# Yerel Medya Takip Ajansı - Bağımlılıklar v2.0
+# ============================================
+
+# Çekirdek
+requests>=2.31.0
+python-dotenv>=1.0.0
+
+# Scraping & Parsing
+beautifulsoup4>=4.12.0
+feedparser>=6.0.0
+
+# Dashboard
+streamlit>=1.30.0
+
+# Veri İşleme
+pandas>=2.0.0
+numpy>=1.24.0
+
+# Görsel İşleme
+Pillow>=10.0.0

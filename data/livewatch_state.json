@@ -1,0 +1,57 @@
+{
+  "is_running": true,
+  "interval_seconds": 180,
+  "last_check": "2026-04-10T10:38:06.550394",
+  "next_check": "2026-04-10T10:41:06.550394",
+  "total_checks": 49,
+  "total_alerts": 7,
+  "last_error": null,
+  "quiet_hours": false,
+  "email_alerts": true,
+  "dashboard_alerts": true,
+  "seen_ids_count": 117,
+  "recent_alerts": [
+    {
+      "title": "İşinsanı Evinde Ölü Bulundu!",
+      "source": "kenttv",
+      "link": "https://kenttv.net/haber/27784946/isinsani-evinde-olu-bulundu",
+      "detected_at": "2026-04-10T10:38:06.550411"
+    },
+    {
+      "title": "Bodrum FK, Bandırma'yı Konuk Ediyor",
+      "source": "kenttv",
+      "link": "https://kenttv.net/haber/27784208/bodrum-fk-bandirmayi-konuk-ediyor",
+      "detected_at": "2026-04-10T09:29:18.341311"
+    },
+    {
+      "title": "Dünyada Bir İlk “Otizm Bestiz Sahne” 10 Nisan’da Bodrum’da",
+      "source": "bodrumca",
+      "link": "https://bodrumca.com/dunyada-bir-ilk-otizm-bestiz-sahne-10-nisanda-bodrumda/",
+      "detected_at": "2026-04-10T08:18:41.332433"
+    },
+    {
+      "title": "Merqezart Art Space’te Yeni Sezon Üç Sergiyle Başlıyor",
+      "source": "bodrumca",
+      "link": "https://bodrumca.com/merqezart-art-spacete-yeni-sezon-uc-sergiyle-basliyor/",
+      "detected_at": "2026-04-10T08:18:41.332433"
+    },
+    {
+      "title": "Bodrum’da 23 Okulda Eş Zamanlı “Atatürk Temalı Şiir Yarışması” Başladı",
+      "source": "bodrumca",
+      "link": "https://bodrumca.com/bodrumda-23-okulda-es-zamanli-ataturk-temali-siir-yarismasi-basladi/",
+      "detected_at": "2026-04-10T08:11:34.086632"
+    },
+    {
+      "title": "Bodrum’da Ortopedi Uzmanları Aynı Çatıda Buluşuyor",
+      "source": "bodrumca",
+      "link": "https://bodrumca.com/bodrumda-ortopedi-uzmanlari-ayni-catida-bulusuyor/",
+      "detected_at": "2026-04-10T08:04:34.219285"
+    },
+    {
+      "title": "Tuna Altunkaya; Bodrum’da Uzun Süre Demir Atma Cezası 605 Bin TL",
+      "source": "bodrumca",
+      "link": "https://bodrumca.com/tuna-altunkaya-bodrumda-uzun-sure-demir-atma-cezasi-605-bin-tl/",
+      "detected_at": "2026-04-10T08:01:00.341295"
+    }
+  ]
+}
