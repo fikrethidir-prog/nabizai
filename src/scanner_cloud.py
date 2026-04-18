@@ -191,6 +191,10 @@ def scan_client(client: dict, writer: SupabaseWriter) -> int:
         if not url:
             continue
 
+        # https:// yoksa ekle
+        if not url.startswith("http://") and not url.startswith("https://"):
+            url = "https://www." + url if not url.startswith("www.") else "https://" + url
+
         # RSS feed URL ise direkt çek
         if any(x in url for x in ["/feed", "/rss", "feeds.feedburner", "news.google.com"]):
             items = fetch_rss(url, _domain(url))
