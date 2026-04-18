@@ -26,26 +26,18 @@ const getCachedBrifing = unstable_cache(
         const Anthropic = (await import('@anthropic-ai/sdk')).default;
         const client = new Anthropic({ apiKey });
 
-        const haberOzet = items.slice(0, 15).map(n =>
-          `- ${n.title} (${n.source}, risk: ${n.risk_level}${n.ai_summary ? ', özet: ' + n.ai_summary.slice(0, 80) : ''})`
+        const haberOzet = items.slice(0, 8).map(n =>
+          `- ${n.title} (${n.source}, risk: ${n.risk_level})`
         ).join('\n');
 
         const message = await client.messages.create({
           model: 'claude-haiku-4-5-20251001',
-          max_tokens: 400,
+          max_tokens: 200,
           messages: [{
             role: 'user',
-            content: `Sen bir medya danışmanısın. Aşağıdaki yerel haberleri analiz et ve Türkçe, 3-4 cümle özet yaz.
-Sadece özeti yaz, başka hiçbir şey yazma. Kısa, net ve profesyonel ol.
-
-Toplam içerik: ${stats.total}, Bugün eklenen: ${stats.today}
-Yüksek riskli: ${highRisk.length}, Orta riskli: ${medRisk.length}
-Öne çıkan konular: ${topTags.join(', ')}
-
-Son haberler:
-${haberOzet}
-
-Odak: Bugün ne kritik? Risk var mı? Fırsat var mı?`
+            content: `Yerel medya özeti yaz (Türkçe, 2-3 cümle, sadece özet):
+Bugün: ${stats.today} içerik, yüksek risk: ${highRisk.length}, konular: ${topTags.slice(0,3).join(', ')}
+${haberOzet}`
           }]
         });
 
@@ -82,7 +74,7 @@ Odak: Bugün ne kritik? Risk var mı? Fırsat var mı?`
     };
   },
   ['ai-brifing'],
-  { revalidate: 3600 } // 1 saat cache
+  { revalidate: 21600 } // 6 saat cache (test süreci için ekonomik)
 );
 
 export async function GET(request: NextRequest) {
