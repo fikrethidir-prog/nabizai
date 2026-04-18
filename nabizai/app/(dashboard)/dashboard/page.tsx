@@ -1,38 +1,82 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import { translateTag, translateTags } from "@/lib/tagTranslation";
+import type { NewsItem } from "@/lib/db";
+
+interface Stats {
+  total: number;
+  today: number;
+  byStatus: Record<string, number>;
+  topTags: { tag: string; count: number }[];
+  bySource: { source: string; count: number }[];
+}
+
+function StatCard({ label, value, change, color }: { label: string; value: string; change?: string; color: string }) {
+  return (
+    <div className="bg-white rounded-2xl p-5 border border-gray-100 hover:shadow-lg transition-all duration-300">
+      <p className="text-sm text-gray-500 mb-1">{label}</p>
+      <div className="flex items-end gap-2">
+        <span className={`text-3xl font-extrabold ${color}`}>{value}</span>
+        {change && <span className="text-xs font-semibold mb-1 text-nabiz-green">{change}</span>}
+      </div>
+    </div>
+  );
+}
+
+function timeAgo(iso: string): string {
+  const diff = Date.now() - new Date(iso).getTime();
+  const h = Math.floor(diff / 3_600_000);
+  const m = Math.floor(diff / 60_000);
+  if (h >= 24) return `${Math.floor(h / 24)} gün önce`;
+  if (h >= 1) return `${h} saat önce`;
+  if (m >= 1) return `${m} dk önce`;
+  return "Az önce";
+}
+
+const riskColors: Record<string, string> = {
+  high: "bg-nabiz-red",
+  medium: "bg-nabiz-amber",
+  low: "bg-nabiz-green",
+};
+
 export default function DashboardPage() {
-  // Demo data — Supabase bağlantısı kurulduğunda gerçek veri ile değiştirilecek
-  const stats = [
-    { label: "Toplam Haber", value: "142", change: "+12", trend: "up", color: "text-nabiz-navy" },
-    { label: "Sosyal İçerik", value: "89", change: "+8", trend: "up", color: "text-nabiz-navy" },
-    { label: "Pozitif Ton", value: "%68", change: "+3%", trend: "up", color: "text-nabiz-green" },
-    { label: "Kriz Uyarısı", value: "2", change: "-1", trend: "down", color: "text-nabiz-red" },
-  ];
+  const [stats, setStats] = useState<Stats | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [sonHaberler, setSonHaberler] = useState<NewsItem[]>([]);
+  const [aiBrifing, setAiBrifing] = useState<string>("");
+  const [aiBrifingKaynak, setAiBrifingKaynak] = useState<string>("");
 
-  const recentNews = [
-    { title: "Bodrum Belediyesi yeni projeler açıkladı", source: "bodrumgundem.com", sentiment: "positive", time: "2 saat önce" },
-    { title: "Turizm sezonunda doluluk artışı bekleniyor", source: "muglahaberleri.com", sentiment: "positive", time: "3 saat önce" },
-    { title: "Halk plajlarında temizlik şikayetleri", source: "Twitter", sentiment: "negative", time: "4 saat önce" },
-    { title: "Yat limanı genişletme çalışmaları başladı", source: "bodrumekspres.com", sentiment: "neutral", time: "5 saat önce" },
-    { title: "Kültür festivali programı açıklandı", source: "Instagram", sentiment: "positive", time: "6 saat önce" },
-  ];
+  useEffect(() => {
+    fetch("/api/stats")
+      .then((r) => r.json())
+      .then((d) => { setStats(d); setLoading(false); })
+      .catch(() => setLoading(false));
 
-  const crisisAlerts = [
-    { topic: "Otopark şikayetleri yayılıyor", score: 7.2, sources: 4, status: "active" },
-    { topic: "Plaj kirliliği haberleri", score: 5.8, sources: 2, status: "active" },
-  ];
+    fetch("/api/haberler?limit=8")
+      .then(r => r.json())
+      .then(d => setSonHaberler(d.items || []))
+      .catch(() => {});
 
-  const sentimentColor = (s: string) => {
-    switch (s) {
-      case "positive": return "bg-nabiz-green";
-      case "negative": return "bg-nabiz-red";
-      default: return "bg-nabiz-amber";
-    }
-  };
+    // AI Brifing
+    fetch("/api/ai-brifing")
+      .then(r => r.json())
+      .then(d => {
+        if (d.brifing) setAiBrifing(d.brifing);
+        if (d.kaynak) setAiBrifingKaynak(d.kaynak);
+      })
+      .catch(() => {});
+  }, []);
 
-  const crisisScoreColor = (score: number) => {
-    if (score >= 8) return "text-nabiz-red bg-red-50";
-    if (score >= 5) return "text-nabiz-amber bg-amber-50";
-    return "text-nabiz-green bg-green-50";
-  };
+  const total = stats?.total ?? 0;
+  const today = stats?.today ?? 0;
+  const normalized = stats?.byStatus?.["normalized"] ?? stats?.byStatus?.["waiting_for_approval"] ?? 0;
+  const topSource = stats?.bySource?.[0]?.source ?? "—";
+  const topTags = stats?.topTags ?? [];
+  const bySource = stats?.bySource ?? [];
+
+  const highRisk = sonHaberler.filter(h => h.risk_level === "high").length;
 
   return (
     <div className="space-y-6">
@@ -45,157 +89,180 @@ export default function DashboardPage() {
             </svg>
           </div>
           <div>
-            <h3 className="font-bold text-lg mb-1">AI Günlük Brifing</h3>
-            <p className="text-white/90 text-sm leading-relaxed">
-              Bugün 142 haber tarandı. Genel medya tonu olumlu, ancak otopark konusunda
-              sosyal medyada artan şikayetler dikkat çekiyor. Turizm sezonu doluluk beklentileri
-              pozitif yansımalara yol açtı. Kriz skorları stabil.
-            </p>
-            <p className="text-white/50 text-xs mt-2">Son güncelleme: Bugün 07:00</p>
+            <div className="flex items-center gap-2 mb-1">
+              <h3 className="font-bold text-lg">AI Günlük Brifing</h3>
+              {aiBrifingKaynak === "claude-ai" && (
+                <span className="px-2 py-0.5 text-[10px] font-bold bg-white/20 rounded-full">Claude AI</span>
+              )}
+            </div>
+            {loading && !aiBrifing ? (
+              <div className="space-y-2 animate-pulse">
+                <div className="h-3 bg-white/20 rounded w-3/4" />
+                <div className="h-3 bg-white/20 rounded w-1/2" />
+              </div>
+            ) : (
+              <p className="text-white/90 text-sm leading-relaxed">
+                {aiBrifing || (
+                  <>
+                    Sistemde toplam <strong>{total}</strong> içerik mevcut. Bugün <strong>{today}</strong> yeni içerik tarandı.
+                    En aktif kaynak: <strong>{topSource}</strong>.
+                    {topTags.length > 0 && (
+                      <> Öne çıkan konular: <strong>{topTags.slice(0, 3).map((t) => translateTag(t.tag)).join(", ")}</strong>.</>
+                    )}
+                    {highRisk > 0 && (
+                      <> ⚠️ <strong>{highRisk} yüksek riskli</strong> içerik tespit edildi.</>
+                    )}
+                  </>
+                )}
+              </p>
+            )}
+            <p className="text-white/50 text-xs mt-2">Gerçek zamanlı — {new Date().toLocaleString("tr-TR")}</p>
           </div>
         </div>
       </div>
 
       {/* Stats Grid */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {stats.map((stat, i) => (
-          <div
-            key={i}
-            className={`bg-white rounded-2xl p-5 border ${
-              stat.label === "Kriz Uyarısı" ? "border-nabiz-red/20" : "border-gray-100"
-            } hover:shadow-lg transition-all duration-300 group`}
-          >
-            <p className="text-sm text-gray-500 mb-1">{stat.label}</p>
-            <div className="flex items-end gap-2">
-              <span className={`text-3xl font-extrabold ${stat.color}`}>{stat.value}</span>
-              <span
-                className={`text-xs font-semibold mb-1 ${
-                  stat.trend === "up" ? "text-nabiz-green" : "text-nabiz-red"
-                }`}
-              >
-                {stat.change}
-              </span>
-            </div>
-          </div>
-        ))}
+        <StatCard label="Toplam İçerik" value={loading ? "—" : String(total)} color="text-nabiz-navy" />
+        <StatCard label="Bugün Eklenen" value={loading ? "—" : String(today)} change={today > 0 ? `+${today}` : undefined} color="text-nabiz-navy" />
+        <StatCard label="İşlenen" value={loading ? "—" : String(normalized)} color="text-nabiz-green" />
+        <StatCard label="Kaynak Sayısı" value={loading ? "—" : String(bySource.length)} color="text-nabiz-navy" />
       </div>
 
       {/* Main Grid */}
       <div className="grid lg:grid-cols-3 gap-6">
-        {/* Recent News */}
+        {/* Son Haberler */}
         <div className="lg:col-span-2 bg-white rounded-2xl border border-gray-100 overflow-hidden">
           <div className="flex items-center justify-between px-6 py-4 border-b border-gray-50">
             <h3 className="font-bold text-nabiz-dark">Son Haberler</h3>
-            <span className="text-xs text-gray-400">Son 24 saat</span>
+            <Link href="/haberler" className="text-xs font-semibold text-nabiz-orange hover:underline">
+              Tümünü Gör →
+            </Link>
           </div>
           <div className="divide-y divide-gray-50">
-            {recentNews.map((news, i) => (
-              <div key={i} className="px-6 py-4 hover:bg-gray-50/50 transition-colors cursor-pointer group">
-                <div className="flex items-start gap-3">
-                  <div className={`w-2 h-2 rounded-full ${sentimentColor(news.sentiment)} mt-2 flex-shrink-0`} />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-nabiz-dark group-hover:text-nabiz-navy transition-colors truncate">
-                      {news.title}
-                    </p>
-                    <div className="flex items-center gap-2 mt-1">
-                      <span className="text-xs text-gray-400">{news.source}</span>
-                      <span className="text-xs text-gray-300">·</span>
-                      <span className="text-xs text-gray-400">{news.time}</span>
+            {loading ? (
+              Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="px-6 py-4 animate-pulse">
+                  <div className="flex items-start gap-3">
+                    <div className="w-2.5 h-2.5 rounded-full bg-gray-200 mt-1.5 flex-shrink-0" />
+                    <div className="flex-1 space-y-2">
+                      <div className="h-4 bg-gray-200 rounded w-3/4" />
+                      <div className="h-3 bg-gray-100 rounded w-1/3" />
                     </div>
                   </div>
                 </div>
+              ))
+            ) : sonHaberler.length === 0 ? (
+              <div className="px-6 py-8 text-center text-gray-400 text-sm">
+                Henüz haber yok. Tarama butonuna tıklayarak başlayın.
               </div>
-            ))}
+            ) : (
+              sonHaberler.map((h) => (
+                <div key={h.id} className="px-6 py-3.5 hover:bg-gray-50/60 transition-colors">
+                  <div className="flex items-start gap-3">
+                    <div className={`w-2.5 h-2.5 rounded-full ${riskColors[h.risk_level] || "bg-gray-300"} mt-1.5 flex-shrink-0`} />
+                    <div className="flex-1 min-w-0">
+                      <a href={h.url} target="_blank" rel="noopener noreferrer"
+                        className="text-sm font-semibold text-nabiz-dark leading-snug line-clamp-1 hover:text-nabiz-orange transition-colors">
+                        {h.title}
+                      </a>
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className="text-[11px] text-gray-400">{h.source}</span>
+                        <span className="text-[11px] text-gray-300">·</span>
+                        <span className="text-[11px] text-gray-400">{timeAgo(h.ingested_date)}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         </div>
 
-        {/* Crisis Panel */}
+        {/* Top Tags */}
         <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
-          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-50">
-            <h3 className="font-bold text-nabiz-dark flex items-center gap-2">
-              <svg className="w-4 h-4 text-nabiz-red" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
-              </svg>
-              Kriz Uyarıları
-            </h3>
-            <span className="px-2 py-0.5 bg-nabiz-red/10 text-nabiz-red text-xs font-bold rounded-full">
-              {crisisAlerts.length} aktif
-            </span>
+          <div className="px-6 py-4 border-b border-gray-50">
+            <h3 className="font-bold text-nabiz-dark">Öne Çıkan Etiketler</h3>
           </div>
-          <div className="divide-y divide-gray-50">
-            {crisisAlerts.map((alert, i) => (
-              <div key={i} className="px-6 py-4">
-                <p className="text-sm font-medium text-nabiz-dark mb-2">
-                  {alert.topic}
-                </p>
-                <div className="flex items-center gap-3">
-                  <span
-                    className={`px-2.5 py-1 text-xs font-bold rounded-lg ${crisisScoreColor(alert.score)}`}
-                  >
-                    Skor: {alert.score}
-                  </span>
-                  <span className="text-xs text-gray-400">
-                    {alert.sources} kaynak
-                  </span>
-                </div>
+          <div className="p-6">
+            {loading ? (
+              <div className="flex flex-wrap gap-2 animate-pulse">
+                {Array.from({ length: 8 }).map((_, i) => (
+                  <div key={i} className="h-7 bg-gray-100 rounded-lg w-20" />
+                ))}
               </div>
-            ))}
+            ) : (
+              <div className="flex flex-wrap gap-2">
+                {topTags.map(({ tag, count }, i) => {
+                  const label = translateTag(tag);
+                  return (
+                    <span
+                      key={tag}
+                      className={`px-3 py-1.5 rounded-lg text-sm font-medium cursor-default transition-all duration-200 hover:scale-105 ${
+                        i < 3
+                          ? "bg-nabiz-navy/10 text-nabiz-navy"
+                          : i < 6
+                          ? "bg-nabiz-orange/10 text-nabiz-orange"
+                          : "bg-gray-100 text-gray-600"
+                      }`}
+                      title={`${count} içerikte geçiyor`}
+                    >
+                      {label}
+                    </span>
+                  );
+                })}
+              </div>
+            )}
           </div>
         </div>
       </div>
 
-      {/* Bottom Grid */}
+      {/* Kaynak Dağılımı + İçerik Durumları */}
       <div className="grid lg:grid-cols-2 gap-6">
-        {/* Platform Distribution */}
-        <div className="bg-white rounded-2xl border border-gray-100 p-6">
-          <h3 className="font-bold text-nabiz-dark mb-6">Platform Dağılımı</h3>
-          <div className="space-y-4">
-            {[
-              { name: "Web", count: 89, max: 142, color: "bg-nabiz-navy" },
-              { name: "Twitter/X", count: 32, max: 142, color: "bg-sky-400" },
-              { name: "Instagram", count: 15, max: 142, color: "bg-pink-500" },
-              { name: "Facebook", count: 6, max: 142, color: "bg-blue-600" },
-            ].map((p, i) => (
-              <div key={i} className="flex items-center gap-4">
-                <span className="text-sm text-gray-500 w-20">{p.name}</span>
-                <div className="flex-1 h-3 bg-gray-100 rounded-full overflow-hidden">
-                  <div
-                    className={`h-full ${p.color} rounded-full transition-all duration-700`}
-                    style={{ width: `${(p.count / p.max) * 100}%` }}
-                  />
-                </div>
-                <span className="text-sm font-semibold text-nabiz-dark w-10 text-right">
-                  {p.count}
-                </span>
-              </div>
-            ))}
+        {/* Kaynak Dağılımı */}
+        <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-50">
+            <h3 className="font-bold text-nabiz-dark">Kaynak Dağılımı</h3>
+            <span className="text-xs text-gray-400">{bySource.length} aktif kaynak</span>
+          </div>
+          <div className="p-6 space-y-3">
+            {loading
+              ? Array.from({ length: 4 }).map((_, i) => (
+                  <div key={i} className="flex items-center gap-4 animate-pulse">
+                    <div className="h-3 bg-gray-100 rounded w-20" />
+                    <div className="flex-1 h-3 bg-gray-100 rounded-full" />
+                    <div className="h-3 bg-gray-100 rounded w-8" />
+                  </div>
+                ))
+              : bySource.slice(0, 8).map((s) => (
+                  <div key={s.source} className="flex items-center gap-4">
+                    <span className="text-sm text-gray-500 w-36 truncate">{s.source}</span>
+                    <div className="flex-1 h-3 bg-gray-100 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-nabiz-navy rounded-full transition-all duration-700"
+                        style={{ width: `${Math.round((s.count / (bySource[0]?.count || 1)) * 100)}%` }}
+                      />
+                    </div>
+                    <span className="text-sm font-semibold text-nabiz-dark w-8 text-right">{s.count}</span>
+                  </div>
+                ))}
           </div>
         </div>
 
-        {/* Keywords */}
-        <div className="bg-white rounded-2xl border border-gray-100 p-6">
-          <h3 className="font-bold text-nabiz-dark mb-6">Öne Çıkan Kelimeler</h3>
-          <div className="flex flex-wrap gap-2">
-            {[
-              "turizm", "belediye", "yat limanı", "festival", "doluluk",
-              "otopark", "plaj", "temizlik", "proje", "yatırım",
-              "otel", "restoran", "altyapı", "ulaşım", "çevre",
-            ].map((keyword, i) => (
-              <span
-                key={i}
-                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 cursor-default ${
-                  i < 3
-                    ? "bg-nabiz-navy/10 text-nabiz-navy"
-                    : i < 6
-                    ? "bg-nabiz-orange/10 text-nabiz-orange"
-                    : "bg-gray-100 text-gray-600"
-                } hover:scale-105`}
-              >
-                {keyword}
-              </span>
-            ))}
+        {/* İçerik Durumları */}
+        {stats && Object.keys(stats.byStatus).length > 0 && (
+          <div className="bg-white rounded-2xl border border-gray-100 p-6">
+            <h3 className="font-bold text-nabiz-dark mb-4">İçerik Durumları</h3>
+            <div className="flex flex-wrap gap-3">
+              {Object.entries(stats.byStatus).map(([status, count]) => (
+                <div key={status} className="px-4 py-3 bg-gray-50 rounded-xl flex-1 min-w-[120px]">
+                  <span className="text-xs text-gray-500 block capitalize">{status.replace(/_/g, " ")}</span>
+                  <span className="text-2xl font-extrabold text-nabiz-dark">{count}</span>
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );

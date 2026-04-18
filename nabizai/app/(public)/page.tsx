@@ -24,28 +24,41 @@ const defaultSettings: Record<string, string> = {
   pkg_3_price: "75.000+ ₺",
 };
 
-// Supabase'den site_settings çekme (bağlantı kurulduğunda aktif olacak)
+// Supabase'den veya lokal JSON dosyasından site_settings çekme
 async function getSettings(): Promise<Record<string, string>> {
   try {
+    let localSettings = {};
+    try {
+      const fs = await import("fs");
+      const path = await import("path");
+      const filePath = path.join(process.cwd(), "..", "data", "site_settings.json");
+      if (fs.existsSync(filePath)) {
+        localSettings = JSON.parse(fs.readFileSync(filePath, "utf-8"));
+      }
+    } catch (e) {
+      // ignores
+    }
+
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-    if (!supabaseUrl || !supabaseKey) {
-      return defaultSettings;
+    // Supabase kullanılmıyorsa veya ayarlanmamışsa sadece lokal ayarları dön
+    if (!supabaseUrl || !supabaseKey || supabaseKey.includes("your_")) {
+      return { ...defaultSettings, ...localSettings };
     }
 
     const { createClient } = await import("@supabase/supabase-js");
     const supabase = createClient(supabaseUrl, supabaseKey);
     const { data } = await supabase.from("site_settings").select("key, value");
 
-    if (!data || data.length === 0) return defaultSettings;
+    if (!data || data.length === 0) return { ...defaultSettings, ...localSettings };
 
     const settings: Record<string, string> = {};
     data.forEach((row: { key: string; value: string }) => {
       settings[row.key] = row.value;
     });
 
-    return { ...defaultSettings, ...settings };
+    return { ...defaultSettings, ...localSettings, ...settings };
   } catch {
     return defaultSettings;
   }
@@ -139,7 +152,7 @@ export default async function LandingPage() {
                 Özellikler
               </a>
               <a href="#fiyatlar" className="text-sm text-gray-600 hover:text-nabiz-navy transition-colors">
-                Fiyatlar
+                Paketler
               </a>
               <Link
                 href="/login"
@@ -284,12 +297,12 @@ export default async function LandingPage() {
         </div>
       </section>
 
-      {/* ===== PRICING ===== */}
+      {/* ===== PAKETLEr ===== */}
       <section id="fiyatlar" className="py-24 md:py-32 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <span className="inline-block px-4 py-1.5 bg-nabiz-navy/10 text-nabiz-navy text-sm font-semibold rounded-full mb-4">
-              Fiyatlandırma
+              Paketler
             </span>
             <h2 className="text-3xl md:text-4xl font-extrabold text-nabiz-dark">
               İhtiyacınıza uygun plan
@@ -303,10 +316,7 @@ export default async function LandingPage() {
             {/* Package 1 — İzleme */}
             <div className="relative p-8 rounded-2xl bg-white border border-gray-200 hover:border-nabiz-navy/30 transition-all duration-300 hover:shadow-xl">
               <h3 className="text-lg font-bold text-nabiz-dark">{s.pkg_1_name}</h3>
-              <div className="mt-4 flex items-baseline gap-1">
-                <span className="text-4xl font-extrabold text-nabiz-navy">{s.pkg_1_price}</span>
-                <span className="text-gray-400 text-sm">/ay</span>
-              </div>
+              <p className="mt-2 text-sm text-gray-500">Temel medya takibi</p>
               <ul className="mt-8 space-y-3">
                 {packageFeatures.pkg_1.map((f, i) => (
                   <li key={i} className="flex items-start gap-3 text-sm text-gray-600">
@@ -321,7 +331,7 @@ export default async function LandingPage() {
                 href="/demo"
                 className="mt-8 w-full inline-flex justify-center py-3 px-6 border-2 border-nabiz-navy text-nabiz-navy font-semibold rounded-xl hover:bg-nabiz-navy hover:text-white transition-all duration-300"
               >
-                Başla
+                Bilgi Alın
               </Link>
             </div>
 
@@ -331,10 +341,7 @@ export default async function LandingPage() {
                 Popüler
               </div>
               <h3 className="text-lg font-bold">{s.pkg_2_name}</h3>
-              <div className="mt-4 flex items-baseline gap-1">
-                <span className="text-4xl font-extrabold">{s.pkg_2_price}</span>
-                <span className="text-white/50 text-sm">/ay</span>
-              </div>
+              <p className="mt-2 text-sm text-white/60">Gelişmiş analiz & rakip takibi</p>
               <ul className="mt-8 space-y-3">
                 {packageFeatures.pkg_2.map((f, i) => (
                   <li key={i} className="flex items-start gap-3 text-sm text-white/80">
@@ -349,17 +356,14 @@ export default async function LandingPage() {
                 href="/demo"
                 className="mt-8 w-full inline-flex justify-center py-3 px-6 gradient-orange font-semibold rounded-xl hover:shadow-lg hover:shadow-nabiz-orange/30 transition-all duration-300"
               >
-                Başla
+                Bilgi Alın
               </Link>
             </div>
 
             {/* Package 3 — İstihbarat */}
             <div className="relative p-8 rounded-2xl bg-white border border-gray-200 hover:border-nabiz-navy/30 transition-all duration-300 hover:shadow-xl">
               <h3 className="text-lg font-bold text-nabiz-dark">{s.pkg_3_name}</h3>
-              <div className="mt-4 flex items-baseline gap-1">
-                <span className="text-4xl font-extrabold text-nabiz-navy">{s.pkg_3_price}</span>
-                <span className="text-gray-400 text-sm">/ay</span>
-              </div>
+              <p className="mt-2 text-sm text-gray-500">Tam kapsamlı istihbarat</p>
               <ul className="mt-8 space-y-3">
                 {packageFeatures.pkg_3.map((f, i) => (
                   <li key={i} className="flex items-start gap-3 text-sm text-gray-600">
@@ -374,7 +378,7 @@ export default async function LandingPage() {
                 href="/demo"
                 className="mt-8 w-full inline-flex justify-center py-3 px-6 border-2 border-nabiz-navy text-nabiz-navy font-semibold rounded-xl hover:bg-nabiz-navy hover:text-white transition-all duration-300"
               >
-                İletişime Geç
+                İletişime Geçin
               </Link>
             </div>
           </div>
