@@ -1,0 +1,35 @@
+name: nabızai Medya Tarayıcısı
+
+on:
+  # Her saat başı otomatik çalışır
+  schedule:
+    - cron: '0 * * * *'
+
+  # Manuel çalıştırma (GitHub → Actions → Run workflow)
+  workflow_dispatch:
+
+jobs:
+  scan:
+    name: Haber Tara & Supabase'e Yaz
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Kodu İndir
+        uses: actions/checkout@v4
+
+      - name: Python 3.11 Kur
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Bağımlılıkları Yükle
+        run: pip install -r requirements.txt
+
+      - name: Tarayıcıyı Çalıştır
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: python src/scanner_cloud.py

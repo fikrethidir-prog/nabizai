@@ -1,21 +1,26 @@
 # ============================================
-# Yerel Medya Takip Ajansı - Bağımlılıklar v2.0
+# nabızai Medya Tarayıcısı — Bağımlılıklar
 # ============================================
 
-# Çekirdek
+# HTTP & Scraping
 requests>=2.31.0
-python-dotenv>=1.0.0
-
-# Scraping & Parsing
 beautifulsoup4>=4.12.0
 feedparser>=6.0.0
 
-# Dashboard
-streamlit>=1.30.0
+# Supabase (bulut DB)
+supabase>=2.0.0
 
-# Veri İşleme
-pandas>=2.0.0
-numpy>=1.24.0
+# AI (Claude Haiku — ucuz, hızlı)
+anthropic>=0.25.0
 
-# Görsel İşleme
-Pillow>=10.0.0
+# Çevre değişkenleri
+python-dotenv>=1.0.0
+
+# Zamanlama (lokal çalıştırma)
+schedule>=1.2.0
+
+# Lokal geliştirme (isteğe bağlı — GitHub Actions'da gerekmez)
+# streamlit>=1.30.0
+# pandas>=2.0.0
+# numpy>=1.24.0
+# Pillow>=10.0.0
