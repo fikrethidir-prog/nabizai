@@ -39,7 +39,6 @@ export async function POST(req: NextRequest) {
         sifre_hash: hash, sifre_salt: salt,
         rol: rol || 'musteri',
         musteri_ids: musteri_ids || [],
-        olusturulma: new Date().toISOString(),
       });
       if (error) throw error;
     } else {

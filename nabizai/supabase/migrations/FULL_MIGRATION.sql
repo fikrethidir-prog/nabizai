@@ -16,6 +16,7 @@ DROP TABLE IF EXISTS public.news_items CASCADE;
 DROP TABLE IF EXISTS public.client_users CASCADE;
 DROP TABLE IF EXISTS public.users CASCADE;
 DROP TABLE IF EXISTS public.clients CASCADE;
+DROP TABLE IF EXISTS public.web_siteleri CASCADE;
 
 -- ─── 3. TABLOLAR ────────────────────────────────────
 
@@ -112,7 +113,24 @@ CREATE TABLE public.demo_requests (
   created_at  timestamptz DEFAULT now()
 );
 
--- 3.8 İşlem Logları
+-- 3.8 Web Siteleri (Takip edilecek haber kaynakları)
+CREATE TABLE public.web_siteleri (
+  id            text PRIMARY KEY,
+  ad            text NOT NULL,
+  url           text NOT NULL,
+  feed_url      text DEFAULT '',
+  yayin_merkezi text DEFAULT '',
+  il            text DEFAULT 'Muğla',
+  ilce          text DEFAULT '',
+  tur           text DEFAULT 'yerel_haber',
+  aktif         boolean DEFAULT true,
+  created_at    timestamptz DEFAULT now()
+);
+
+ALTER TABLE public.web_siteleri ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "web_siteleri_service_role" ON public.web_siteleri FOR ALL USING (true);
+
+-- 3.9 İşlem Logları
 CREATE TABLE public.logs (
   id            uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   kullanici_id  text,

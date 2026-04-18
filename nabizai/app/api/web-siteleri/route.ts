@@ -20,8 +20,7 @@ async function getSb() {
   const { createClient } = await import('@supabase/supabase-js');
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    { db: { schema: 'nabizai' } }
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
   );
 }
 
@@ -52,8 +51,11 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Yetkisiz' }, { status: 401 });
   }
 
-  // Supabase modda — config tablosundaki client source_urls'den oku
-  // veya lokal dosyadan oku
+  if (isSupabaseMode()) {
+    const sb = await getSb();
+    const { data } = await sb.from('web_siteleri').select('*').order('created_at', { ascending: false });
+    return NextResponse.json(data || []);
+  }
   return NextResponse.json(readSitelerLocal());
 }
 
@@ -65,7 +67,7 @@ export async function POST(req: NextRequest) {
   }
 
   const contentType = req.headers.get('content-type') || '';
-  const siteler = readSitelerLocal();
+  const siteler = isSupabaseMode() ? [] : readSitelerLocal();
 
   // Excel/CSV toplu import
   if (contentType.includes('text/csv') || contentType.includes('text/plain')) {
@@ -117,8 +119,15 @@ export async function POST(req: NextRequest) {
       eklenen++;
     }
 
-    writeSitelerLocal(siteler);
-    return NextResponse.json({ ok: true, mesaj: `${eklenen} site eklendi, ${atlanan} atlandı`, eklenen, atlanan, toplam: siteler.length });
+    if (isSupabaseMode()) {
+      const sb = await getSb();
+      for (const s of siteler) {
+        await sb.from('web_siteleri').upsert(s, { onConflict: 'id' });
+      }
+    } else {
+      writeSitelerLocal(siteler);
+    }
+    return NextResponse.json({ ok: true, mesaj: `${eklenen} site eklendi, ${atlanan} atlandı`, eklenen, atlanan });
   }
 
   // Tekil JSON ekleme
@@ -129,7 +138,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Site adı ve URL zorunlu' }, { status: 400 });
   }
 
-  siteler.push({
+  const yeniSite: WebSitesi = {
     id: body.id || (ad.toLowerCase().replace(/[^a-z0-9]/g, '') + '_' + Date.now().toString(36)),
     ad, url,
     feed_url: feed_url || '',
@@ -138,10 +147,17 @@ export async function POST(req: NextRequest) {
     ilce: ilce || '',
     tur: tur || 'yerel_haber',
     aktif: body.aktif !== false,
-  });
+  };
 
-  writeSitelerLocal(siteler);
-  return NextResponse.json({ ok: true, id: siteler[siteler.length - 1].id, toplam: siteler.length });
+  if (isSupabaseMode()) {
+    const sb = await getSb();
+    const { error } = await sb.from('web_siteleri').insert(yeniSite);
+    if (error) return NextResponse.json({ error: String(error.message) }, { status: 500 });
+  } else {
+    siteler.push(yeniSite);
+    writeSitelerLocal(siteler);
+  }
+  return NextResponse.json({ ok: true, id: yeniSite.id });
 }
 
 // ── PUT — site güncelle ──────────────────────────────────────────────
@@ -154,12 +170,17 @@ export async function PUT(req: NextRequest) {
   const body = await req.json();
   if (!body.id) return NextResponse.json({ error: 'ID gerekli' }, { status: 400 });
 
-  const siteler = readSitelerLocal();
-  const idx = siteler.findIndex(s => s.id === body.id);
-  if (idx === -1) return NextResponse.json({ error: 'Site bulunamadı' }, { status: 404 });
-
-  siteler[idx] = { ...siteler[idx], ...body };
-  writeSitelerLocal(siteler);
+  if (isSupabaseMode()) {
+    const sb = await getSb();
+    const { error } = await sb.from('web_siteleri').update(body).eq('id', body.id);
+    if (error) return NextResponse.json({ error: String(error.message) }, { status: 500 });
+  } else {
+    const siteler = readSitelerLocal();
+    const idx = siteler.findIndex(s => s.id === body.id);
+    if (idx === -1) return NextResponse.json({ error: 'Site bulunamadı' }, { status: 404 });
+    siteler[idx] = { ...siteler[idx], ...body };
+    writeSitelerLocal(siteler);
+  }
   return NextResponse.json({ ok: true });
 }
 
@@ -173,7 +194,12 @@ export async function DELETE(req: NextRequest) {
   const { id } = await req.json();
   if (!id) return NextResponse.json({ error: 'ID gerekli' }, { status: 400 });
 
-  const siteler = readSitelerLocal().filter(s => s.id !== id);
-  writeSitelerLocal(siteler);
-  return NextResponse.json({ ok: true, toplam: siteler.length });
+  if (isSupabaseMode()) {
+    const sb = await getSb();
+    await sb.from('web_siteleri').delete().eq('id', id);
+  } else {
+    const siteler = readSitelerLocal().filter(s => s.id !== id);
+    writeSitelerLocal(siteler);
+  }
+  return NextResponse.json({ ok: true });
 }
