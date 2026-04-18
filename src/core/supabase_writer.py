@@ -125,7 +125,6 @@ class SupabaseWriter:
             "ai_summary": ai_summary,
             "status": "new",
             "published_at": pub_at,
-            "metadata": metadata,
         }
 
         try:
